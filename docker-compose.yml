@@ -1,0 +1,40 @@
+version: "3.3"
+
+services:
+  botpress:
+    image: botpress/server:${SOFTWARE_VERSION_TAG}
+    restart: always
+    ports:
+      - 3000
+    environment:
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASS}@postgres:5435/${DB_NAME}
+      - EXTERNAL_URL=${EXTERNAL_URL}
+    depends_on:
+      - postgres
+    volumes:
+      - ./botpress_data:/botpress/data
+
+  postgres:
+    image: postgres:11.2-alpine
+    restart: always
+    expose:
+      - 5435
+    container_name: postgres
+    environment:
+      PGPORT: 5435
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_USER: ${DB_USER}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:1.21
+    restart: always
+    ports:
+      - 172.17.0.1:4765:80
+    command: nginx -g 'daemon off;';
+    depends_on:
+      - botpress
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
